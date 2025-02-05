@@ -47,7 +47,7 @@ RUN sed -i 's/armv7/arm/g' ./configure && \
                 CFLAGS=-static \
                 CC=/usr/arm-gnu-toolchain/bin/arm-none-linux-gnueabihf-gcc \
                 CPP=/usr/arm-gnu-toolchain/bin/arm-none-linux-gnueabihf-cpp && \
-    make CFLAGS+="-fPIC" && \
+    make CFLAGS+="-fPIC" -j"$(nproc)" && \
     make install
 WORKDIR /
 RUN rm -rf valgrind-3.24.0 valgrind-3.24.0.tar.bz2 && \
@@ -58,13 +58,15 @@ RUN rm -rf valgrind-3.24.0 valgrind-3.24.0.tar.bz2 && \
 ENV VALGRIND_OPTS="--vgdb=no"
 
 # exec hook
-COPY hook_execve.c /
+COPY hook_execve.c check_arch_arm.c /
 RUN QEMU_HASH="$(sha256sum /usr/bin/qemu-arm-static | awk "{print \$1}")" && \
     sed -i "s|PLACEHOLDER_HASH|$QEMU_HASH|g" /hook_execve.c && \
     /usr/bin/gcc -shared -fPIC -o hook_execve.so hook_execve.c -ldl -lssl -lcrypto && \
+    /usr/bin/gcc -o check_arch_arm check_arch_arm.c && \
     mv /hook_execve.so /usr/lib/hook_execve.so && \
-    rm /hook_execve.c
-ENV LD_PRELOAD /usr/lib/hook_execve.so
+    mv /check_arch_arm /usr/bin/check_arch_arm && \
+    rm hook_execve.c check_arch_arm.c
+ENV LD_PRELOAD=/usr/lib/hook_execve.so
 
 COPY entry.sh /entry.sh
 RUN chmod +x /entry.sh
