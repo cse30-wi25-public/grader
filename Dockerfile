@@ -5,7 +5,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # x86 tools
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
         sudo ca-certificates vim curl wget git bzip2 file net-tools build-essential less libssl-dev python3 python3-pip \
-        qemu-user-static
+        qemu-user-static strace
 
 WORKDIR /
 
